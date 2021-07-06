@@ -1,0 +1,717 @@
+{
+  "description": "ServiceNow Messaging",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "next": "SetFromNum",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "incomingCall"
+        },
+        {
+          "event": "incomingRequest"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 0,
+          "y": -10
+        }
+      }
+    },
+    {
+      "name": "SendMessageToAgent",
+      "type": "send-to-flex",
+      "transitions": [
+        {
+          "event": "callComplete"
+        },
+        {
+          "event": "failedToEnqueue"
+        },
+        {
+          "event": "callFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 990,
+          "y": 4230
+        },
+        "workflow": "WWe7161acfd2af3836f5121ca5a6469138",
+        "channel": "TC4a60b7d1d3b97784c0a3a2dde65ac9fb",
+        "attributes": "{\n\t\"name\":\"{{widgets.GetUserFromPhone.parsed.result.name}}\",\n\t\"channelType\":\"{{trigger.message.ChannelAttributes.channel_type}}\",\n\t\"channelSid\":\"{{trigger.message.ChannelSid}}\",\n\t\"user_sys_id\":\"{{widgets.GetUserFromPhone.parsed.result.sys_id}}\",\n\t\"ticket_number\":\"{{flow.variables.TicketNumber}}\",\n\t\"user\":{\n\t\t\"name\":\"{{widgets.GetUserFromPhone.parsed.result.name}}\",\n    \"phone\": \"{{flow.variables.FromNum}}\",\n\t\t\"title\":\"{{widgets.GetUserFromPhone.parsed.result.title}}\",\n\t\t\"department\":\"{{widgets.GetUserFromPhone.parsed.result.department}}\",\n\t\t\"location\":\"{{widgets.GetUserFromPhone.parsed.result.location}}\"\n\t}\n}"
+      }
+    },
+    {
+      "name": "GetUserFromPhone",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "NumberOfTickets",
+          "event": "success"
+        },
+        {
+          "next": "SendMessageToAgent",
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZS571c60a17619ba2d773501d87421382a",
+        "environment_sid": "ZE95e2e3ec5128ea2d78f64afeabb3f86b",
+        "offset": {
+          "x": 0,
+          "y": 460
+        },
+        "function_sid": "ZH1152664a286930acef177735af20639f",
+        "parameters": [
+          {
+            "value": "{{flow.variables.FromNum}}",
+            "key": "From"
+          }
+        ],
+        "url": "https://default-5501-dev.twil.io/get_user"
+      }
+    },
+    {
+      "name": "NumberOfTickets",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "SendMessageToAgent",
+          "event": "noMatch"
+        },
+        {
+          "next": "SendMessageToAgent",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "No Tickets",
+              "arguments": ["{{widgets.GetUserFromPhone.parsed.num_tickets}}"],
+              "type": "equal_to",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "next": "MessageType",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Has Tickets",
+              "arguments": ["{{widgets.GetUserFromPhone.parsed.num_tickets}}"],
+              "type": "not_equal_to",
+              "value": "0"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.GetUserFromPhone.parsed.num_tickets}}",
+        "offset": {
+          "x": 0,
+          "y": 680
+        }
+      }
+    },
+    {
+      "name": "MessageType",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "SplitMenu",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 0,
+          "y": 960
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "Hello {{widgets.GetUserFromPhone.parsed.result.first_name}}, \nPlease reply: \n\"1\" for an existing issue \n\"2\" for a new issue\n\"3\" to speak to an agent",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "SplitMenu",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "ExistingTickets",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Existing Ticket",
+              "arguments": ["{{widgets.MessageType.inbound.Body}}"],
+              "type": "equal_to",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "next": "SendMessageToAgent",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "New Ticket",
+              "arguments": ["{{widgets.MessageType.inbound.Body}}"],
+              "type": "equal_to",
+              "value": "3"
+            }
+          ]
+        },
+        {
+          "next": "NewTicketCategory",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to 2",
+              "arguments": ["{{widgets.MessageType.inbound.Body}}"],
+              "type": "equal_to",
+              "value": "2"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.MessageType.inbound.Body}}",
+        "offset": {
+          "x": 0,
+          "y": 1330
+        }
+      }
+    },
+    {
+      "name": "ExistingTickets",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "SetTicketIndex",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "1 Ticket",
+              "arguments": [
+                "{{widgets.GetUserFromPhone.parsed.result.num_tickets}}"
+              ],
+              "type": "equal_to",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "next": "GiveTicketOptions",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "More than 1 Ticket",
+              "arguments": [
+                "{{widgets.GetUserFromPhone.parsed.result.num_tickets}}"
+              ],
+              "type": "not_equal_to",
+              "value": "1"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.GetUserFromPhone.parsed.result.num_tickets}}",
+        "offset": {
+          "x": -830,
+          "y": 1410
+        }
+      }
+    },
+    {
+      "name": "GiveTicketOptions",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "SetTicketIndex",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -360,
+          "y": 1740
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "It looks like you have a few tickets open which would you like more information about?\n{% for i in (1..widgets.GetUserFromPhone.parsed.result.num_tickets) %}\nReply {{i}} for  {{widgets.GetUserFromPhone.parsed.result.tickets[forloop.index0].short_description}} \n{% endfor %}",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "SetTicketIndex",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "TicketOnHold",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "value": "{% if widgets. GetUserFromPhone.parsed.result.num_tickets == 1%}0{% else %}{% assign var1 = widgets.GiveTicketOptions.inbound.Body | minus: 1 %}{{var1}}{% endif %}",
+            "key": "ticketIndex"
+          },
+          {
+            "value": "{% if widgets. \nGetUserTickets.parsed.result.num_tickets == 1%}{{widgets.GetUserFromPhone.parsed.result.tickets[0].state =='On Hold'}}{% else %}{% assign var1 = widgets.GiveTicketOptions.inbound.Body | minus: 1 %}{{widgets.GetUserFromPhone.parsed.result.tickets[var1].state =='On Hold'}}{% endif %}",
+            "key": "TicketOnHold"
+          },
+          {
+            "value": "{% if widgets. \nGetUserTickets.parsed.result.num_tickets == 1%}{{widgets.GetUserFromPhone.parsed.result.tickets[0].number}}{% else %}{% assign var1 = widgets.GiveTicketOptions.inbound.Body  | minus: 1 %}{{widgets.GetUserFromPhone.parsed.result.tickets[var1].number}}{% endif %}",
+            "key": "TicketNumber"
+          }
+        ],
+        "offset": {
+          "x": -800,
+          "y": 2010
+        }
+      }
+    },
+    {
+      "name": "TicketOnHold",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "TicketStatus",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Not on Hold",
+              "arguments": ["{{flow.variables.TicketOnHold}}"],
+              "type": "equal_to",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "next": "GetOnHoldResponse",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "On Hold",
+              "arguments": ["{{flow.variables.TicketOnHold}}"],
+              "type": "equal_to",
+              "value": "true"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{flow.variables.TicketOnHold}}",
+        "offset": {
+          "x": -450,
+          "y": 2400
+        }
+      }
+    },
+    {
+      "name": "TicketStatus",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "PlayThanks",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -710,
+          "y": 2740
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "{% assign var_index = flow.variables.ticketIndex| minus: 0 %}\nThis ticket is currently {{widgets.GetUserFromPhone.parsed.result.tickets[var_index].state}} and has a priority of {{widgets.GetUserFromPhone.parsed.result.tickets[var_index].priority}}"
+      }
+    },
+    {
+      "name": "GetOnHoldResponse",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "Response",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -140,
+          "y": 2730
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "{% assign var_index = flow.variables.ticketIndex| minus: 0 %}\nYour ticket is currently {{widgets.GetUserFromPhone.parsed.result.tickets[var_index].state}} and has a priority of {{widgets.GetUserFromPhone.parsed.result.tickets[var_index].priority}}. The last comment from the technician was {{widgets.GetUserFromPhone.parsed.result.tickets[var_index].last_comment}}. Please respond with your response to this comment or NO, to not leave a response",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "Response",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "PlayThanks",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "No Response",
+              "arguments": ["{{widgets.GetOnHoldResponse.inbound.Body}}"],
+              "type": "equal_to",
+              "value": "No"
+            }
+          ]
+        },
+        {
+          "next": "AddCommentToTicket",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "User added response",
+              "arguments": ["{{widgets.GetOnHoldResponse.inbound.Body}}"],
+              "type": "not_equal_to",
+              "value": "No"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.GetOnHoldResponse.inbound.Body}}",
+        "offset": {
+          "x": -480,
+          "y": 3040
+        }
+      }
+    },
+    {
+      "name": "PlayThanks",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "SplitThanks",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -700,
+          "y": 3680
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "Please reply agent if you would still like to speak with an agent about this issue",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "AddCommentToTicket",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "MessageConfirmation",
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZSb92bb21dd3c40c0f51fa875f8f5eb93a",
+        "environment_sid": "ZE6cd101097f4aa6f5649f463af2a2e2f7",
+        "offset": {
+          "x": 30,
+          "y": 3260
+        },
+        "function_sid": "ZHd8755890f79023c0a38dfb089eba26a5",
+        "parameters": [
+          {
+            "value": "{{flow.variables.TicketNumber}}",
+            "key": "ticketNumber"
+          },
+          {
+            "value": "{{widgets.GetOnHoldResponse.inbound.Body}}",
+            "key": "comment"
+          }
+        ],
+        "url": "https://serverless-servicenow-8067-dev.twil.io/add_comment"
+      }
+    },
+    {
+      "name": "MessageConfirmation",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "PlayThanks",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 30,
+          "y": 3480
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Thank you, this message will be added to the ticket."
+      }
+    },
+    {
+      "name": "SplitThanks",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "SendMessageToAgent",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value contains agent",
+              "arguments": ["{{widgets.PlayThanks.inbound.Body}}"],
+              "type": "contains",
+              "value": "agent"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.PlayThanks.inbound.Body}}",
+        "offset": {
+          "x": 50,
+          "y": 3990
+        }
+      }
+    },
+    {
+      "name": "SetFromNum",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "GetUserFromPhone",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "value": "{% if trigger.message.ChannelAttributes.pre_engagement_data.customerNumber %}{{trigger.message.ChannelAttributes.pre_engagement_data.customerNumber | strip}}{% else %}{{trigger.message.ChannelAttributes.from}}{% endif %}",
+            "key": "FromNum"
+          }
+        ],
+        "offset": {
+          "x": 0,
+          "y": 230
+        }
+      }
+    },
+    {
+      "name": "NewTicketCategory",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "NewTicketDesc",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 1220,
+          "y": 1640
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "What are you experiencing an issue with? Please respond with:\n\"1\" - Hardware\n\"2\" - Software\n\"3\" - Password Reset\n\"4\" - for Other",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "NewTicketDesc",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "NewTicketCreate",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 1220,
+          "y": 1930
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "Thanks! You answered {{widgets.NewTicketCategory.inbound.Body}}Now please respond with a brief description of the issue you are experiencing.",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "NewTicketCreate",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "NewTicketThanks",
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZS571c60a17619ba2d773501d87421382a",
+        "environment_sid": "ZE95e2e3ec5128ea2d78f64afeabb3f86b",
+        "offset": {
+          "x": 1220,
+          "y": 2220
+        },
+        "function_sid": "ZH4832f3c9be11658757a5da246df8667e",
+        "parameters": [
+          {
+            "value": "{{widgets.NewTicketCategory.inbound.Body}}",
+            "key": "ticketCategory"
+          },
+          {
+            "value": "{{widgets.NewTicketDesc.inbound.Body}}",
+            "key": "ticketShortDesc"
+          },
+          {
+            "value": "{{widgets.NewTicketCategory.outbound.MediaUrl0}}",
+            "key": "mediaURL"
+          }
+        ],
+        "url": "https://default-5501-dev.twil.io/new_ticket"
+      }
+    },
+    {
+      "name": "NewTicketThanks",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "SplitThanksNew",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 1230,
+          "y": 2490
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "Thanks. We've logged an incident report for {{widgets.NewTicketDesc.inbound.Body}}. \n\nPlease respond \"agent\" if you'd like to speak to an agent about this or anything else.",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "SplitThanksNew",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "SendMessageToAgent",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value contains agent",
+              "arguments": ["{{widgets.NewTicketThanks.inbound.Body}}"],
+              "type": "contains",
+              "value": "agent"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.NewTicketThanks.inbound.Body}}",
+        "offset": {
+          "x": 480,
+          "y": 3990
+        }
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}

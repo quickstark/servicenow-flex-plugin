@@ -1,0 +1,721 @@
+{
+  "description": "ServiceNow Voice",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "event": "incomingMessage"
+        },
+        {
+          "next": "GetUserFromPhone",
+          "event": "incomingCall"
+        },
+        {
+          "event": "incomingRequest"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 10,
+          "y": -20
+        }
+      }
+    },
+    {
+      "name": "SendCallToAgent",
+      "type": "send-to-flex",
+      "transitions": [
+        {
+          "event": "callComplete"
+        },
+        {
+          "event": "failedToEnqueue"
+        },
+        {
+          "event": "callFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 520,
+          "y": 4140
+        },
+        "workflow": "WWe7161acfd2af3836f5121ca5a6469138",
+        "channel": "TCc6a9040e07993554df33553aa9e8f7f2",
+        "attributes": "{\n\t\"name\":\"{{widgets.GetUserFromPhone.parsed.result.name}}\",\n\t\"channelType\":\"Voice\",\n\t\"channelSid\":\"{{trigger.call.CallSid}} \",\n\t\"user_sys_id\":\"{{widgets.GetUserFromPhone.parsed.result.sys_id}}\",\n\t\"ticket_number\":\"{{flow.variables.TicketNumber}}\",\n\t\"user\":{\n\t\t\"name\":\"{{widgets.GetUserFromPhone.parsed.result.name}}\",\n   \"phone\": \"{{trigger.call.From}}\",\n\t\t\"title\":\"{{widgets.GetUserFromPhone.parsed.result.title}}\",\n\t\t\"department\":\"{{widgets.GetUserFromPhone.parsed.result.department}}\",\n\t\t\"location\":\"{{widgets.GetUserFromPhone.parsed.result.location}}\"\n\t}\n}"
+      }
+    },
+    {
+      "name": "GetUserFromPhone",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "NumberOfTickets",
+          "event": "success"
+        },
+        {
+          "next": "SendCallToAgent",
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZS571c60a17619ba2d773501d87421382a",
+        "environment_sid": "ZE95e2e3ec5128ea2d78f64afeabb3f86b",
+        "offset": {
+          "x": 150,
+          "y": 180
+        },
+        "function_sid": "ZH1152664a286930acef177735af20639f",
+        "parameters": [
+          {
+            "value": "{{trigger.call.From}}",
+            "key": "From"
+          }
+        ],
+        "url": "https://default-5501-dev.twil.io/get_user"
+      }
+    },
+    {
+      "name": "CallType",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "CallTypeSplit",
+          "event": "keypress"
+        },
+        {
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Salli",
+        "number_of_digits": 1,
+        "speech_timeout": "auto",
+        "offset": {
+          "x": 130,
+          "y": 790
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "<speak>Hello {{widgets.GetUserFromPhone.parsed.result.first_name}}, Please press 1 if you are calling about an existing issue <break time=\"500ms\"/> press 2 to create a new ticket <break time=\"500ms\"/> or press 3 if you would like to speak to an agent about a new issue <break time=\"500ms\"/> I missed that, lets try again<break time=\"500ms\"/>  </speak>",
+        "language": "en-US",
+        "stop_gather": true,
+        "gather_language": "en",
+        "profanity_filter": "true",
+        "timeout": 5
+      }
+    },
+    {
+      "name": "CallTypeSplit",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "SendCallToAgent",
+          "event": "noMatch"
+        },
+        {
+          "next": "NewTicketCategory",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "New Issue",
+              "arguments": ["{{widgets.CallType.Digits}}"],
+              "type": "equal_to",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "next": "NumberOfTickets2",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Existing Issue",
+              "arguments": ["{{widgets.CallType.Digits}}"],
+              "type": "equal_to",
+              "value": "1"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.CallType.Digits}}",
+        "offset": {
+          "x": 120,
+          "y": 1090
+        }
+      }
+    },
+    {
+      "name": "NumberOfTickets",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "SendCallToAgent",
+          "event": "noMatch"
+        },
+        {
+          "next": "SendCallToAgent",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "No Tickets",
+              "arguments": [
+                "{{widgets.GetUserFromPhone.parsed.result.num_tickets}}"
+              ],
+              "type": "equal_to",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "next": "CallType",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Has Ticket(s)",
+              "arguments": [
+                "{{widgets.GetUserFromPhone.parsed.result.num_tickets}}"
+              ],
+              "type": "not_equal_to",
+              "value": "0"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.GetUserFromPhone.parsed.result.num_tickets}}",
+        "offset": {
+          "x": 140,
+          "y": 480
+        }
+      }
+    },
+    {
+      "name": "NumberOfTickets2",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "SetTicketIndex",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "1 Ticket",
+              "arguments": [
+                "{{widgets.GetUserFromPhone.parsed.result.num_tickets}}"
+              ],
+              "type": "equal_to",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "next": "GiveTicketOptions",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Greater than 1 Ticket",
+              "arguments": [
+                "{{widgets.GetUserFromPhone.parsed.result.num_tickets}}"
+              ],
+              "type": "not_equal_to",
+              "value": "1"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.GetUserFromPhone.parsed.result.num_tickets}}",
+        "offset": {
+          "x": -780,
+          "y": 1220
+        }
+      }
+    },
+    {
+      "name": "GiveTicketOptions",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "SetTicketIndex",
+          "event": "keypress"
+        },
+        {
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Salli",
+        "number_of_digits": 1,
+        "offset": {
+          "x": -580,
+          "y": 1500
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "<speak>It looks like you have a few tickets open which would you like more information about?<break time=\"500ms\"/>\n{% for i in (1..widgets.GetUserFromPhone.parsed.result.num_tickets) %}\nPress {{i}} for  {{widgets.GetUserFromPhone.parsed.result.tickets[forloop.index0   ].short_description}} <break time=\"500ms\"/>\n{% endfor %}\n</speak>",
+        "language": "en-US",
+        "stop_gather": true,
+        "gather_language": "en",
+        "timeout": 5
+      }
+    },
+    {
+      "name": "SetTicketIndex",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "TicketOnHold",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "value": "{% if widgets. \nGetUserFromPhone.parsed.result.num_tickets == 1%}0{% else %}{% assign var1 = widgets.GiveTicketOptions.Digits | minus: 1 %}{{var1}}{% endif %}",
+            "key": "ticketIndex"
+          },
+          {
+            "value": "{% if widgets. \nGetUserTickets.parsed.result.num_tickets == 1%}{{widgets.GetUserFromPhone.parsed.result.tickets[0].state =='On Hold'}}{% else %}{% assign var1 = widgets.GiveTicketOptions.Digits | minus: 1 %}{{widgets.GetUserFromPhone.parsed.result.tickets[var1].state =='On Hold'}}{% endif %}",
+            "key": "TicketOnHold"
+          },
+          {
+            "value": "{% if widgets. \nGetUserTickets.parsed.result.num_tickets == 1%}{{widgets.GetUserFromPhone.parsed.result.tickets[0].number}}{% else %}{% assign var1 = widgets.GiveTicketOptions.Digits | minus: 1 %}{{widgets.GetUserFromPhone.parsed.result.tickets[var1].number}}{% endif %}",
+            "key": "TicketNumber"
+          }
+        ],
+        "offset": {
+          "x": -890,
+          "y": 1770
+        }
+      }
+    },
+    {
+      "name": "say_play_1",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "PlayThanks",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Salli",
+        "offset": {
+          "x": -1080,
+          "y": 2280
+        },
+        "loop": 1,
+        "say": "<speak>\n{% assign var_index = flow.variables.ticketIndex| minus: 0 %}\nThis ticket is currently {{widgets.GetUserFromPhone.parsed.result.tickets[var_index].state}} and has a priority of {{widgets.GetUserFromPhone.parsed.result.tickets[var_index].priority}}\n</speak>",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "TicketOnHold",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "say_play_1",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Not On Hold",
+              "arguments": ["{{flow.variables.TicketOnHold}}"],
+              "type": "equal_to",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "next": "GetOnHoldResponse",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "On Hold",
+              "arguments": ["{{flow.variables.TicketOnHold}}"],
+              "type": "equal_to",
+              "value": "true"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{flow.variables.TicketOnHold}}",
+        "offset": {
+          "x": -890,
+          "y": 2000
+        }
+      }
+    },
+    {
+      "name": "GetOnHoldResponse",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "SplitOnHoldResponse",
+          "event": "keypress"
+        },
+        {
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Salli",
+        "number_of_digits": 1,
+        "offset": {
+          "x": -680,
+          "y": 2280
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "<speak>\n{% assign var_index = flow.variables.ticketIndex| minus: 0 %}\nYour ticket is currently {{widgets.GetUserFromPhone.parsed.result.tickets[var_index].state}} and has a priority of {{widgets.GetUserFromPhone.parsed.result.tickets[var_index].priority}}. The last comment from the technician was {{widgets.GetUserFromPhone.parsed.result.tickets[var_index].last_comment}}. To respond to this comment press 1 otherwise press 2\n</speak>",
+        "language": "en-US",
+        "stop_gather": true,
+        "gather_language": "en",
+        "timeout": 5
+      }
+    },
+    {
+      "name": "SplitOnHoldResponse",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "PlayBeep",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Get Response",
+              "arguments": ["{{widgets.GetOnHoldResponse.Digits}}"],
+              "type": "equal_to",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "next": "PlayThanks",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Does not wish to leave a response",
+              "arguments": ["{{widgets.GetOnHoldResponse.Digits}}"],
+              "type": "equal_to",
+              "value": "2"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.GetOnHoldResponse.Digits}}",
+        "offset": {
+          "x": -670,
+          "y": 2530
+        }
+      }
+    },
+    {
+      "name": "PlayBeep",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "Response",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Salli",
+        "offset": {
+          "x": -190,
+          "y": 2780
+        },
+        "loop": 1,
+        "say": "<speak>\nPlease speak your response after the tone <break time=\"500ms\"/> </speak>",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "Response",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "event": "keypress"
+        },
+        {
+          "next": "AddCommentToTicket",
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "play": "https://puce-partridge-9268.twil.io/assets/Answering%20Machine%20Beep-SoundBible.com-1804176620.mp3",
+        "voice": "alice",
+        "offset": {
+          "x": -160,
+          "y": 3010
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "language": "en",
+        "stop_gather": true,
+        "gather_language": "en-US",
+        "timeout": 5
+      }
+    },
+    {
+      "name": "SplitThanks",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "SendCallToAgent",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Speak to agent",
+              "arguments": ["{{widgets.PlayThanks.Digits}}"],
+              "type": "equal_to",
+              "value": "1"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.PlayThanks.Digits}}",
+        "offset": {
+          "x": 680,
+          "y": 3690
+        }
+      }
+    },
+    {
+      "name": "PlayThanks",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "SplitThanks",
+          "event": "keypress"
+        },
+        {
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Salli",
+        "number_of_digits": 1,
+        "offset": {
+          "x": 230,
+          "y": 3710
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "<speak>\nIf you would still like to speak to an agent please press 1 otherwise you will be disconnected<break time=\"500ms\"/> </speak>",
+        "language": "en-US",
+        "stop_gather": true,
+        "gather_language": "en",
+        "timeout": 5
+      }
+    },
+    {
+      "name": "MessageConfirmation",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "PlayThanks",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Salli",
+        "offset": {
+          "x": -160,
+          "y": 3450
+        },
+        "loop": 1,
+        "say": "Thank you, this message will be added to the ticket.",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "AddCommentToTicket",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "MessageConfirmation",
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZSb92bb21dd3c40c0f51fa875f8f5eb93a",
+        "environment_sid": "ZE6cd101097f4aa6f5649f463af2a2e2f7",
+        "offset": {
+          "x": -160,
+          "y": 3240
+        },
+        "function_sid": "ZHd8755890f79023c0a38dfb089eba26a5",
+        "parameters": [
+          {
+            "value": "{{flow.variables.TicketNumber}}",
+            "key": "ticketNumber"
+          },
+          {
+            "value": "{{widgets.Response.SpeechResult}}",
+            "key": "comment"
+          }
+        ],
+        "url": "https://serverless-servicenow-8067-dev.twil.io/add_comment"
+      }
+    },
+    {
+      "name": "NewTicketCategory",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "NewTicketDesc",
+          "event": "keypress"
+        },
+        {
+          "next": "NewTicketDesc",
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Salli",
+        "speech_timeout": "auto",
+        "offset": {
+          "x": 980,
+          "y": 1220
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "<speak>What are you experiencing an issue with? <break time=\"500ms\"/> \npress 1 for Hardware <break time=\"500ms\"/>\npress 2 for Software <break time=\"500ms\"/>\npress 3 for Password Reset <break time=\"500ms\"/>\npress 4 for Other <break time=\"500ms\"/>\n</speak>",
+        "language": "en-US",
+        "stop_gather": true,
+        "gather_language": "en",
+        "profanity_filter": "true",
+        "timeout": 5
+      }
+    },
+    {
+      "name": "NewTicketDesc",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "NewTicketCreate",
+          "event": "keypress"
+        },
+        {
+          "next": "NewTicketCreate",
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Salli",
+        "speech_timeout": "auto",
+        "offset": {
+          "x": 980,
+          "y": 1490
+        },
+        "loop": 1,
+        "finish_on_key": "#",
+        "say": "Thanks! Now please respond with a brief description of the issue you are experiencing.",
+        "language": "en-US",
+        "stop_gather": true,
+        "gather_language": "en",
+        "profanity_filter": "true",
+        "timeout": 5
+      }
+    },
+    {
+      "name": "NewTicketCreate",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "NewTicketThanks",
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZS571c60a17619ba2d773501d87421382a",
+        "environment_sid": "ZE95e2e3ec5128ea2d78f64afeabb3f86b",
+        "offset": {
+          "x": 982,
+          "y": 1768
+        },
+        "function_sid": "ZH4832f3c9be11658757a5da246df8667e",
+        "parameters": [
+          {
+            "value": "{{widgets.NewTicketCategory.Digits}}",
+            "key": "ticketCategory"
+          },
+          {
+            "value": "{{widgets.NewTicketDesc.SpeechResult}}",
+            "key": "ticketShortDesc"
+          }
+        ],
+        "url": "https://default-5501-dev.twil.io/new_ticket"
+      }
+    },
+    {
+      "name": "NewTicketThanks",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "PlayThanks",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Salli",
+        "offset": {
+          "x": 990,
+          "y": 2020
+        },
+        "loop": 1,
+        "say": "Thanks. We logged an incident report for {{widgets.NewTicketDesc.SpeechResult}} ...",
+        "language": "en-US"
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}
