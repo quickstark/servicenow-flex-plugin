@@ -7,6 +7,7 @@ exports.handler = function (context, event, callback) {
   response.appendHeader("Access-Control-Allow-Headers", "Content-Type");
 
   console.log(event);
+  console.log(context);
 
   got
     .post(context.SERVICE_NOW_API_ROOT + "status_v2", {
