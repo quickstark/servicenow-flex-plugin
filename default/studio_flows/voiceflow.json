@@ -534,7 +534,7 @@
         },
         "loop": 1,
         "finish_on_key": "#",
-        "say": "<speak>\nIf you would still like to speak to an agent please press 1 otherwise you will be disconnected<break time=\"500ms\"/> </speak>",
+        "say": "<speak>\n If you would still like to speak to an agent please press 1 otherwise you will be disconnected<break time=\"500ms\"/> </speak>",
         "language": "en-US",
         "stop_gather": true,
         "gather_language": "en",

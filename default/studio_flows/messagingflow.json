@@ -141,7 +141,7 @@
         "service": "{{trigger.message.InstanceSid}}",
         "channel": "{{trigger.message.ChannelSid}}",
         "from": "{{flow.channel.address}}",
-        "body": "Hello {{widgets.GetUserFromPhone.parsed.result.first_name}}, \nPlease reply: \n\"1\" for an existing issue \n\"2\" for a new issue\n\"3\" to speak to an agent",
+        "body": "Hello {{widgets.GetUserFromPhone.parsed.result.first_name}}, \nPlease reply : \n\"1\" for an existing issue \n\"2\" for a new issue\n\"3\" to speak to an agent",
         "timeout": "3600"
       }
     },
