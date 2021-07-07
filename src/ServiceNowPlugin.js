@@ -1,4 +1,4 @@
-import { FlexPlugin } from "flex-plugin";
+import { FlexPlugin, getRuntimeUrl } from "flex-plugin";
 import React from "react";
 
 const PLUGIN_NAME = "ServiceNowPlugin";
@@ -50,15 +50,16 @@ export default class ServiceNowPlugin extends FlexPlugin {
 
       const options = {
         method: "POST",
-        mode: "cors",
         body: JSON.stringify(data),
         headers: {
           "Content-Type": "application/json",
         },
       };
 
+      console.log("SERVICE BASE URL");
+      console.log(manager.store.getState().flex.config.serviceBaseUrl);
       // We can grab the Domain and Path from Context Object
-      const url = `${context.DOMAIN_NAME}/task_event`;
+      const url = `https://default-5501-dev.twil.io/task_event`;
 
       // Make a request to our function to pop or close the appropriate UI in ServiceNow
       fetch(url, options)
