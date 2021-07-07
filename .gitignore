@@ -1,6 +1,7 @@
 #Twilio specific files
 .twilio-functions
 .nvmrc
+.DS_Store
 
 # Logs
 logs
