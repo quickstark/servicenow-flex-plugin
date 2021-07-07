@@ -1,3 +1,7 @@
+#Twilio specific files
+.twilio-functions
+.nvmrc
+
 # Logs
 logs
 *.log

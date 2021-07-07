@@ -64,7 +64,7 @@ export default class ServiceNowPlugin extends FlexPlugin {
         },
       };
 
-      const url = "https://serverless-servicenow-8067-dev.twil.io/task_event";
+      const url = "https://default-5501-dev.twil.io/task_event";
       // Make a request to our function to pop or close the appropriate UI in ServiceNow
       fetch(url, options)
         .then((resp) => resp.json())
