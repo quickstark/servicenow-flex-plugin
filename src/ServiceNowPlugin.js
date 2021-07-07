@@ -56,10 +56,11 @@ export default class ServiceNowPlugin extends FlexPlugin {
         },
       };
 
-      console.log("SERVICE BASE URL");
-      console.log(manager.store.getState().flex.config.serviceBaseUrl);
+      // Sanity check on ENV variable
+      console.log(`SERVERLESS BASE URL: ${process.env.SERVERLESS_BASE}`);
+
       // We can grab the Domain and Path from Context Object
-      const url = `https://default-5501-dev.twil.io/task_event`;
+      const url = `${process.env.SERVERLESS_BASE}/task_event`;
 
       // Make a request to our function to pop or close the appropriate UI in ServiceNow
       fetch(url, options)

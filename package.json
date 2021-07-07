@@ -1,6 +1,6 @@
 {
   "name": "ServiceNowPlugin",
-  "version": "2.1.24",
+  "version": "2.1.28",
   "private": true,
   "scripts": {
     "postinstall": "flex-plugin pre-script-check"
