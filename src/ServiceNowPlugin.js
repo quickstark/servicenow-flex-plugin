@@ -45,26 +45,21 @@ export default class ServiceNowPlugin extends FlexPlugin {
         eventType: payload.eventType,
       };
 
+      // Sanity check ... will display in in browser console
       console.log(data);
 
-      // const options = {
-      //   method: "POST",
-      //   mode: "no-cors",
-      //   body: new URLSearchParams(data),
-      //   headers: {
-      //     "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      //   },
-      // };
       const options = {
         method: "POST",
-        // mode: "no-cors",
+        mode: "cors",
         body: JSON.stringify(data),
         headers: {
           "Content-Type": "application/json",
         },
       };
 
-      const url = "https://default-5501-dev.twil.io/task_event";
+      // We can grab the Domain and Path from Context Object
+      const url = `${context.DOMAIN_NAME}/task_event`;
+
       // Make a request to our function to pop or close the appropriate UI in ServiceNow
       fetch(url, options)
         .then((resp) => resp.json())
