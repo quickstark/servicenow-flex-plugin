@@ -93,16 +93,16 @@
         }
       ],
       "properties": {
-        "voice": "Polly.Salli",
+        "voice": "Polly.Matthew-Neural",
         "number_of_digits": 1,
         "speech_timeout": "auto",
         "offset": {
-          "x": 130,
-          "y": 790
+          "x": 120,
+          "y": 870
         },
         "loop": 1,
         "finish_on_key": "#",
-        "say": "<speak>Hello {{widgets.GetUserFromPhone.parsed.result.first_name}}, Please press 1 if you are calling about an existing issue <break time=\"500ms\"/> press 2 to create a new ticket <break time=\"500ms\"/> or press 3 if you would like to speak to an agent about a new issue <break time=\"500ms\"/> I missed that, lets try again<break time=\"500ms\"/>  </speak>",
+        "say": "<speak><amazon:domain name=\"conversational\">Hello {{widgets.GetUserFromPhone.parsed.result.first_name}}, Please press 1 if you are calling about an existing issue <break time=\"500ms\"/> press 2 to create a new ticket <break time=\"500ms\"/> or press 3 if you would like to speak to an agent about a new issue <break time=\"500ms\"/> I missed that, lets try again<break time=\"500ms\"/> </amazon:domain></speak>",
         "language": "en-US",
         "stop_gather": true,
         "gather_language": "en",
@@ -191,8 +191,8 @@
       "properties": {
         "input": "{{widgets.GetUserFromPhone.parsed.result.num_tickets}}",
         "offset": {
-          "x": 140,
-          "y": 480
+          "x": -580,
+          "y": 620
         }
       }
     },
@@ -256,8 +256,9 @@
         }
       ],
       "properties": {
-        "voice": "Polly.Salli",
+        "voice": "Polly.Matthew-Neural",
         "number_of_digits": 1,
+        "speech_timeout": "auto",
         "offset": {
           "x": -580,
           "y": 1500
@@ -268,6 +269,7 @@
         "language": "en-US",
         "stop_gather": true,
         "gather_language": "en",
+        "profanity_filter": "true",
         "timeout": 5
       }
     },
@@ -311,7 +313,7 @@
         }
       ],
       "properties": {
-        "voice": "Polly.Salli",
+        "voice": "Polly.Matthew-Neural",
         "offset": {
           "x": -1080,
           "y": 2280
@@ -377,8 +379,9 @@
         }
       ],
       "properties": {
-        "voice": "Polly.Salli",
+        "voice": "Polly.Matthew-Neural",
         "number_of_digits": 1,
+        "speech_timeout": "auto",
         "offset": {
           "x": -680,
           "y": 2280
@@ -389,6 +392,7 @@
         "language": "en-US",
         "stop_gather": true,
         "gather_language": "en",
+        "profanity_filter": "true",
         "timeout": 5
       }
     },
@@ -442,7 +446,7 @@
         }
       ],
       "properties": {
-        "voice": "Polly.Salli",
+        "voice": "Polly.Matthew-Neural",
         "offset": {
           "x": -190,
           "y": 2780
@@ -526,18 +530,20 @@
         }
       ],
       "properties": {
-        "voice": "Polly.Salli",
+        "voice": "Polly.Matthew-Neural",
         "number_of_digits": 1,
+        "speech_timeout": "auto",
         "offset": {
           "x": 230,
           "y": 3710
         },
         "loop": 1,
         "finish_on_key": "#",
-        "say": "<speak>\n If you would still like to speak to an agent please press 1 otherwise you will be disconnected<break time=\"500ms\"/> </speak>",
+        "say": "<speak>\nIf you would still like to speak to an agent please press 1 otherwise you will be disconnected<break time=\"500ms\"/> </speak>",
         "language": "en-US",
         "stop_gather": true,
         "gather_language": "en",
+        "profanity_filter": "true",
         "timeout": 5
       }
     },
@@ -551,7 +557,7 @@
         }
       ],
       "properties": {
-        "voice": "Polly.Salli",
+        "voice": "Polly.Matthew-Neural",
         "offset": {
           "x": -160,
           "y": 3450
@@ -611,7 +617,7 @@
         }
       ],
       "properties": {
-        "voice": "Polly.Salli",
+        "voice": "Polly.Matthew-Neural",
         "speech_timeout": "auto",
         "offset": {
           "x": 980,
@@ -644,7 +650,7 @@
         }
       ],
       "properties": {
-        "voice": "Polly.Salli",
+        "voice": "Polly.Matthew-Neural",
         "speech_timeout": "auto",
         "offset": {
           "x": 980,
@@ -703,13 +709,112 @@
         }
       ],
       "properties": {
-        "voice": "Polly.Salli",
+        "voice": "Polly.Matthew-Neural",
         "offset": {
           "x": 990,
           "y": 2020
         },
         "loop": 1,
         "say": "Thanks. We logged an incident report for {{widgets.NewTicketDesc.SpeechResult}} ...",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "UserStatus",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "NoConditionMatch",
+          "event": "noMatch"
+        },
+        {
+          "next": "NotFoundMessage",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Multiple Found",
+              "arguments": [
+                "{{widgets.GetUserFromPhone.parsed.result.status}}"
+              ],
+              "type": "equal_to",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "next": "NotFoundMessage",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "User Not Found",
+              "arguments": [
+                "{{widgets.GetUserFromPhone.parsed.result.status}}"
+              ],
+              "type": "equal_to",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "next": "NumberOfTickets",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Found",
+              "arguments": [
+                "{{widgets.GetUserFromPhone.parsed.result.status}}"
+              ],
+              "type": "equal_to",
+              "value": "1"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.GetUserFromPhone.parsed.result.status}}",
+        "offset": {
+          "x": 510,
+          "y": 500
+        }
+      }
+    },
+    {
+      "name": "NoConditionMatch",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "PlayThanks",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Matthew-Neural",
+        "offset": {
+          "x": 530,
+          "y": 750
+        },
+        "loop": 1,
+        "say": "Sorry, something went wrong with fetching the user from ServiceNow. Please check Studio Logs, Flex status and clear Task Router / Proxy Sessions.",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "NotFoundMessage",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "PlayThanks",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "Polly.Matthew-Neural",
+        "offset": {
+          "x": 890,
+          "y": 750
+        },
+        "loop": 1,
+        "say": "Sorry,{{widgets.GetUserFromPhone.parsed.result.status_message}}",
         "language": "en-US"
       }
     }

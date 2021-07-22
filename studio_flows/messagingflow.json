@@ -52,7 +52,7 @@
       "type": "run-function",
       "transitions": [
         {
-          "next": "NumberOfTickets",
+          "next": "UserStatus",
           "event": "success"
         },
         {
@@ -113,8 +113,8 @@
       "properties": {
         "input": "{{widgets.GetUserFromPhone.parsed.num_tickets}}",
         "offset": {
-          "x": 0,
-          "y": 680
+          "x": -510,
+          "y": 760
         }
       }
     },
@@ -136,12 +136,12 @@
       "properties": {
         "offset": {
           "x": 0,
-          "y": 960
+          "y": 1070
         },
         "service": "{{trigger.message.InstanceSid}}",
         "channel": "{{trigger.message.ChannelSid}}",
         "from": "{{flow.channel.address}}",
-        "body": "Hello {{widgets.GetUserFromPhone.parsed.result.first_name}}, \nPlease reply : \n\"1\" for an existing issue \n\"2\" for a new issue\n\"3\" to speak to an agent",
+        "body": "Hello {{widgets.GetUserFromPhone.parsed.result.first_name}}, \nPlease reply: \n\"1\" for an existing issue \n\"2\" for a new issue\n\"3\" to speak to an agent",
         "timeout": "3600"
       }
     },
@@ -169,7 +169,7 @@
           "event": "match",
           "conditions": [
             {
-              "friendly_name": "New Ticket",
+              "friendly_name": "Send to Agent",
               "arguments": ["{{widgets.MessageType.inbound.Body}}"],
               "type": "equal_to",
               "value": "3"
@@ -181,7 +181,7 @@
           "event": "match",
           "conditions": [
             {
-              "friendly_name": "If value equal_to 2",
+              "friendly_name": "New Ticket",
               "arguments": ["{{widgets.MessageType.inbound.Body}}"],
               "type": "equal_to",
               "value": "2"
@@ -264,7 +264,7 @@
         "service": "{{trigger.message.InstanceSid}}",
         "channel": "{{trigger.message.ChannelSid}}",
         "from": "{{flow.channel.address}}",
-        "body": "It looks like you have a few tickets open which would you like more information about?\n{% for i in (1..widgets.GetUserFromPhone.parsed.result.num_tickets) %}\nReply {{i}} for  {{widgets.GetUserFromPhone.parsed.result.tickets[forloop.index0].short_description}} \n{% endfor %}",
+        "body": "It looks like you have a few tickets open which would you like more information about?\n{% for i in (1..widgets.GetUserFromPhone.parsed.result.num_tickets) %}\nPress {{i}} for  {{widgets.GetUserFromPhone.parsed.result.tickets[forloop.index0   ].short_description}}\n{% endfor %}",
         "timeout": "3600"
       }
     },
@@ -333,8 +333,8 @@
       "properties": {
         "input": "{{flow.variables.TicketOnHold}}",
         "offset": {
-          "x": -450,
-          "y": 2400
+          "x": -550,
+          "y": 2310
         }
       }
     },
@@ -452,7 +452,7 @@
         "service": "{{trigger.message.InstanceSid}}",
         "channel": "{{trigger.message.ChannelSid}}",
         "from": "{{flow.channel.address}}",
-        "body": "Please reply agent if you would still like to speak with an agent about this issue",
+        "body": "Please reply agent if you would still like to speak with an agent about an issue",
         "timeout": "3600"
       }
     },
@@ -469,13 +469,13 @@
         }
       ],
       "properties": {
-        "service_sid": "ZSb92bb21dd3c40c0f51fa875f8f5eb93a",
-        "environment_sid": "ZE6cd101097f4aa6f5649f463af2a2e2f7",
+        "service_sid": "ZS571c60a17619ba2d773501d87421382a",
+        "environment_sid": "ZE95e2e3ec5128ea2d78f64afeabb3f86b",
         "offset": {
           "x": 30,
           "y": 3260
         },
-        "function_sid": "ZHd8755890f79023c0a38dfb089eba26a5",
+        "function_sid": "ZHa759399c4058022c9cc86d93915bd24e",
         "parameters": [
           {
             "value": "{{flow.variables.TicketNumber}}",
@@ -486,7 +486,7 @@
             "key": "comment"
           }
         ],
-        "url": "https://serverless-servicenow-8067-dev.twil.io/add_comment"
+        "url": "https://default-5501-dev.twil.io/add_comment"
       }
     },
     {
@@ -707,6 +707,113 @@
           "x": 480,
           "y": 3990
         }
+      }
+    },
+    {
+      "name": "UserStatus",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "NoConditionMatch",
+          "event": "noMatch"
+        },
+        {
+          "next": "NotFoundMessage",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Multiple Found",
+              "arguments": [
+                "{{widgets.GetUserFromPhone.parsed.result.status}}"
+              ],
+              "type": "equal_to",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "next": "NotFoundMessage",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "User Not Found",
+              "arguments": [
+                "{{widgets.GetUserFromPhone.parsed.result.status}}"
+              ],
+              "type": "equal_to",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "next": "NumberOfTickets",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Found",
+              "arguments": [
+                "{{widgets.GetUserFromPhone.parsed.result.status}}"
+              ],
+              "type": "equal_to",
+              "value": "1"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.GetUserFromPhone.parsed.result.status}}",
+        "offset": {
+          "x": 530,
+          "y": 710
+        }
+      }
+    },
+    {
+      "name": "NotFoundMessage",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "PlayThanks",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 870,
+          "y": 1030
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Sorry, {{widgets.GetUserFromPhone.parsed.result.status_message}}"
+      }
+    },
+    {
+      "name": "NoConditionMatch",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "PlayThanks",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 490,
+          "y": 1030
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Sorry, something went wrong with fetching the user from ServiceNow. Please check Studio Logs, Flex status and clear Task Router / Proxy Sessions."
       }
     }
   ],
